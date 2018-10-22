@@ -296,8 +296,9 @@ public class EndorsementCredential extends DeviceAssociatedCertificate {
         // although we start with a byte representation, we need to change the encoding to
         // make it parseable
         ASN1InputStream asn1In = null;
+        X509Certificate ec = null;
         try {
-            X509Certificate ec = super.getX509Certificate();
+            ec = super.getX509Certificate();
             asn1In = new ASN1InputStream(ec.getEncoded());
 
             ASN1Primitive obj = asn1In.readObject();

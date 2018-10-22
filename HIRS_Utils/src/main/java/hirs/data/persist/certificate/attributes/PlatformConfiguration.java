@@ -1,5 +1,7 @@
 package hirs.data.persist.certificate.attributes;
 
+//import java.io.IOException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -58,8 +60,11 @@ public class PlatformConfiguration {
      * Constructor given the SEQUENCE that contains Platform Configuration.
      * @param sequence containing the the Platform Configuration.
      * @throws IllegalArgumentException if there was an error on the parsing
+     * @throws java.io.IOException Occurs when the ComponentIdenttifier parses
+     * a component with DEROctetString
      */
-    public PlatformConfiguration(final ASN1Sequence sequence) throws IllegalArgumentException {
+    public PlatformConfiguration(final ASN1Sequence sequence)
+            throws IllegalArgumentException, IOException {
 
         //Default values
         this.componentIdentifier = new ArrayList<>();

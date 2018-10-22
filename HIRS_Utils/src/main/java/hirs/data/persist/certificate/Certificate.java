@@ -46,6 +46,7 @@ import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -62,6 +63,54 @@ import java.util.Objects;
  */
 @Entity
 public abstract class Certificate extends ArchivableEntity {
+
+    /**
+     * a variable.
+     */
+    public static final String ECDSA_OID = "1.2.840.10045.4.3.2";
+    /**
+     * a variable.
+     */
+    public static final String RSA256_OID = "1.2.840.113549.1.1.11";
+    /**
+     * a variable.
+     */
+    public static final String RSA384_OID = "1.2.840.113549.1.1.12";
+    /**
+     * a variable.
+     */
+    public static final String RSA512_OID = "1.2.840.113549.1.1.13";
+    /**
+     * a variable.
+     */
+    public static final String RSA224_OID = "1.2.840.113549.1.1.14";
+    /**
+     * a variable.
+     */
+    public static final String RSA256_STRING = "SHA256WithRSA";
+    /**
+     * a variable.
+     */
+    public static final String ECDSA_STRING = "SHA256WithECDSA";
+
+    private static final int KEY_USAGE_BIT0 = 0;
+    private static final int KEY_USAGE_BIT1 = 1;
+    private static final int KEY_USAGE_BIT2 = 2;
+    private static final int KEY_USAGE_BIT3 = 3;
+    private static final int KEY_USAGE_BIT4 = 4;
+    private static final int KEY_USAGE_BIT5 = 5;
+    private static final int KEY_USAGE_BIT6 = 6;
+    private static final int KEY_USAGE_BIT7 = 7;
+    private static final int KEY_USAGE_BIT8 = 8;
+    private static final String KEY_USAGE_DS = "DIGITAL SIGNATURE";
+    private static final String KEY_USAGE_NR = "NON-REPUDIATION";
+    private static final String KEY_USAGE_KE = "KEY ENCIPHERMENT";
+    private static final String KEY_USAGE_DE = "DATA ENCIPHERMENT";
+    private static final String KEY_USAGE_KA = "KEY AGREEMENT";
+    private static final String KEY_USAGE_KC = "KEY CERT SIGN";
+    private static final String KEY_USAGE_CS = "CRL SIGN";
+    private static final String KEY_USAGE_EO = "ENCIPHER ONLY";
+    private static final String KEY_USAGE_DO = "DECIPHER ONLY";
     private static final String PEM_HEADER = "-----BEGIN CERTIFICATE-----";
     private static final String PEM_FOOTER = "-----END CERTIFICATE-----";
     private static final String PEM_ATTRIBUTE_HEADER = "-----BEGIN ATTRIBUTE CERTIFICATE-----";
@@ -204,6 +253,10 @@ public abstract class Certificate extends ArchivableEntity {
     @Transient
     private X509Certificate parsedX509Cert = null;
 
+    private String signatureAlgorithm;
+    private String publicKeyAlgorithm;
+    private String keyUsage;
+    private String extendedKeyUsage;
 
     /**
      * Default constructor necessary for Hibernate.
@@ -213,12 +266,15 @@ public abstract class Certificate extends ArchivableEntity {
         this.serialNumber = BigInteger.ZERO;
         this.issuer = null;
         this.subject = null;
-
+        this.publicKeyAlgorithm = null;
+        this.signatureAlgorithm = null;
         this.encodedPublicKey = null;
         this.publicKeyModulusHexValue = null;
         this.signature = null;
         this.beginValidity = null;
         this.endValidity = null;
+        this.keyUsage = null;
+        this.extendedKeyUsage = null;
         this.certificateBytes = null;
         this.certificateHash = 0;
         this.certAndTypeHash = 0;
@@ -277,18 +333,34 @@ public abstract class Certificate extends ArchivableEntity {
                 this.issuer = x509Certificate.getIssuerX500Principal().getName();
                 this.subject = x509Certificate.getSubjectX500Principal().getName();
                 this.encodedPublicKey = x509Certificate.getPublicKey().getEncoded();
+                this.publicKeyAlgorithm = x509Certificate.getPublicKey().getAlgorithm();
                 BigInteger publicKeyModulus = getPublicKeyModulus(x509Certificate);
                 if (publicKeyModulus != null) {
                     this.publicKeyModulusHexValue = publicKeyModulus.toString(HEX_BASE);
                 } else {
                     this.publicKeyModulusHexValue = null;
                 }
+                this.signatureAlgorithm = x509Certificate.getSigAlgName();
                 this.signature = x509Certificate.getSignature();
                 this.beginValidity = x509Certificate.getNotBefore();
                 this.endValidity = x509Certificate.getNotAfter();
                 this.holderSerialNumber = BigInteger.ZERO;
                 this.issuerOrganization = getOrganization(this.issuer);
                 this.subjectOrganization = getOrganization(this.subject);
+
+                this.keyUsage = parseKeyUsage(x509Certificate.getKeyUsage());
+                try {
+                    if (x509Certificate.getExtendedKeyUsage() != null) {
+                        StringBuilder sb = new StringBuilder();
+                        for (String s : x509Certificate.getExtendedKeyUsage()) {
+                            sb.append(String.format("%s%n", s));
+                        }
+                        this.extendedKeyUsage = sb.toString();
+                    }
+                } catch (CertificateParsingException ex) {
+                    // do nothing
+                }
+
                 break;
 
             case ATTRIBUTE_CERTIFICATE:
@@ -300,6 +372,17 @@ public abstract class Certificate extends ArchivableEntity {
                 this.subjectOrganization = null;
                 this.encodedPublicKey = null;
                 this.publicKeyModulusHexValue = null;
+
+                switch (attCert.getSignatureAlgorithm().getAlgorithm().getId()) {
+                    case RSA256_OID:
+                        this.signatureAlgorithm = RSA256_STRING;
+                        break;
+                    case ECDSA_OID:
+                        this.signatureAlgorithm = ECDSA_STRING;
+                        break;
+                    default:
+                        break;
+                }
 
                 // Get attribute certificate information
                 this.serialNumber = attCertInfo.getSerialNumber().getValue();
@@ -441,6 +524,77 @@ public abstract class Certificate extends ArchivableEntity {
         return possiblePEM.contains(PEM_HEADER) || possiblePEM.contains(PEM_ATTRIBUTE_HEADER);
     }
 
+    private String parseKeyUsage(final boolean[] bools) {
+        StringBuilder sb = new StringBuilder();
+
+        if (bools != null) {
+            for (int i = 0; i < bools.length; i++) {
+                if (bools[i]) {
+                    sb.append(getKeyUsageString(i));
+                }
+            }
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Return the string associated with the boolean slot.
+     * @param bit associated with the location in the array.
+     * @return string value of the bit set.
+     */
+    private String getKeyUsageString(final int bit) {
+        String tempStr = "";
+
+        switch (bit) {
+            case KEY_USAGE_BIT0:
+                tempStr = String.format("%s%n", KEY_USAGE_DS);
+                break;
+            case KEY_USAGE_BIT1:
+                tempStr = String.format("%s%n", KEY_USAGE_NR);
+                break;
+            case KEY_USAGE_BIT2:
+                tempStr = String.format("%s%n", KEY_USAGE_KE);
+                break;
+            case KEY_USAGE_BIT3:
+                tempStr = String.format("%s%n", KEY_USAGE_DE);
+                break;
+            case KEY_USAGE_BIT4:
+                tempStr = String.format("%s%n", KEY_USAGE_KA);
+                break;
+            case KEY_USAGE_BIT5:
+                tempStr = String.format("%s%n", KEY_USAGE_KC);
+                break;
+            case KEY_USAGE_BIT6:
+                tempStr = String.format("%s%n", KEY_USAGE_CS);
+                break;
+            case KEY_USAGE_BIT7:
+                tempStr = String.format("%s%n", KEY_USAGE_EO);
+                break;
+            case KEY_USAGE_BIT8:
+                tempStr = String.format("%s%n", KEY_USAGE_DO);
+                break;
+            default:
+                break;
+        }
+
+        return tempStr;
+    }
+
+    /**
+     * Get the x509 Platform Certificate version.
+     * @return a big integer representing the certificate version.
+     */
+    public int getX509CredentialVersion() {
+        try {
+            return getX509Certificate().getVersion() - 1;
+        } catch (IOException ex) {
+            LOGGER.warn("X509 Credential Version not found.");
+            LOGGER.error(ex);
+            return Integer.MAX_VALUE;
+        }
+    }
+
     /**
      * Checks if another certificate is the issuer for this certificate.
      *
@@ -545,6 +699,38 @@ public abstract class Certificate extends ArchivableEntity {
         AttributeCertificate attCertificate = AttributeCertificate
                 .getInstance(ASN1Primitive.fromByteArray(certificateBytes));
         return attCertificate;
+    }
+
+    /**
+     * Gets the keyusage info.
+     * @return the world.
+     */
+    public String getKeyUsage() {
+        return keyUsage;
+    }
+
+    /**
+     * Gets the extended key info.
+     * @return the word.
+     */
+    public String getExtendedKeyUsage() {
+        return extendedKeyUsage;
+    }
+
+    /**
+     * Gets the algorithm.
+     * @return yep.
+     */
+    public String getSignatureAlgorithm() {
+        return signatureAlgorithm;
+    }
+
+    /**
+     * Gets the algorithm.
+     * @return  yep.
+     */
+    public String getPublicKeyAlgorithm() {
+        return publicKeyAlgorithm;
     }
 
     /**

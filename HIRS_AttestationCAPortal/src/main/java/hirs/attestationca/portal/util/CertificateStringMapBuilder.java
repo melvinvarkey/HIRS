@@ -47,6 +47,8 @@ public final class CertificateStringMapBuilder {
             data.put("beginValidity", certificate.getBeginValidity().toString());
             data.put("endValidity", certificate.getEndValidity().toString());
             data.put("signature", Arrays.toString(certificate.getSignature()));
+            data.put("signatureSize", Integer.toString(certificate.getSignature().length
+                    * Certificate.MIN_ATTR_CERT_LENGTH));
 
             if (certificate.getSubject() != null) {
                 data.put("subject", certificate.getSubject());
@@ -56,11 +58,25 @@ public final class CertificateStringMapBuilder {
                 data.put("isSelfSigned", "false");
             }
 
+            data.put("policyReference", certificate.getPolicyReference());
+            data.put("signatureAlgorithm", certificate.getSignatureAlgorithm());
             if (certificate.getEncodedPublicKey() != null) {
                 data.put("encodedPublicKey",
                         Arrays.toString(certificate.getEncodedPublicKey()));
+                data.put("publicKeySize", Integer.toString(certificate
+                        .getEncodedPublicKey()
+                        .length * Certificate.MIN_ATTR_CERT_LENGTH));
+                data.put("publicKeyAlgorithm", certificate.getPublicKeyAlgorithm());
             }
 
+            if (certificate.getKeyUsage() != null) {
+                data.put("keyUsage", certificate.getKeyUsage());
+            }
+
+            if (certificate.getExtendedKeyUsage() != null
+                    && !certificate.getExtendedKeyUsage().isEmpty()) {
+                data.put("extendedKeyUsage", certificate.getExtendedKeyUsage());
+            }
             //Get issuer ID if not self signed
             if (data.get("isSelfSigned").equals("false")) {
                 //Get the missing certificate chain for not self sign
@@ -179,6 +195,9 @@ public final class CertificateStringMapBuilder {
             data.putAll(getGeneralCertificateInfo(certificate, certificateManager));
             data.put("subjectKeyIdentifier",
                     Arrays.toString(certificate.getSubjectKeyIdentifier()));
+            //x509 credential version
+            data.put("x509Version", Integer.toString(certificate
+                    .getX509CredentialVersion()));
         } else {
             LOGGER.error(notFoundMessage);
         }
@@ -206,8 +225,10 @@ public final class CertificateStringMapBuilder {
             data.put("manufacturer", certificate.getManufacturer());
             data.put("model", certificate.getModel());
             data.put("version", certificate.getVersion());
-            data.put("policyReference", certificate.getPolicyReference());
             data.put("revocationLocator", certificate.getRevocationLocator());
+            //x509 credential version
+            data.put("x509Version", Integer.toString(certificate
+                    .getX509CredentialVersion()));
             // Add hashmap with TPM information if available
             if (certificate.getTpmSpecification() != null) {
                 data.putAll(

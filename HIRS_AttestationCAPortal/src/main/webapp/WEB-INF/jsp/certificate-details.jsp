@@ -59,19 +59,19 @@
                         </c:when>
                         <c:otherwise>
                             ${initialData.issuer}
-                          </c:otherwise>
+                        </c:otherwise>
                     </c:choose>
                     <c:if test="${param.type!='issued'}">
                         <span class="chainIcon">
                             <!-- Icon with link for missing certificate for the chain -->
                             <c:choose>
                                 <c:when test="${initialData.isSelfSigned == 'true'}">
-                                     <img src="${icons}/ic_all_inclusive_black_24dp.png"
-                                                    title="Self sign certificate.">
+                                    <img src="${icons}/ic_all_inclusive_black_24dp.png"
+                                         title="Self sign certificate.">
                                 </c:when>
                                 <c:when test="${empty initialData.missingChainIssuer}">
                                     <img src="${icons}/ic_checkbox_marked_circle_black_green_24dp.png"
-                                            title="All certificates in the chain were found.">
+                                         title="All certificates in the chain were found.">
                                 </c:when>
                                 <c:otherwise>
                                     <img src="${icons}/ic_error_red_24dp.png"
@@ -103,21 +103,57 @@
                 <div class="col-md-1 col-md-offset-1"><span class="colHeader">Signature</span></div>
                 <div id="signature" class="col col-md-8"></div>
             </div>
+            <div class="row">
+                <div class="col-md-1 col-md-offset-1"><span class="colHeader">Signature Size</span></div>
+                <div id="signatureSize" class="col col-md-8">
+                    <span>
+                        ${initialData.signatureAlgorithm} / ${initialData.signatureSize} bits
+                    </span>
+                </div>
+            </div>            
             <c:if test="${not empty initialData.encodedPublicKey}">
                 <div class="row">
                     <div class="col-md-1 col-md-offset-1"><span class="colHeader">Public Key</span></div>
                     <div id="encodedPublicKey" class="col col-md-8"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-1 col-md-offset-1"><span class="colHeader">Public Key Size</span></div>
+                    <div id="publicKeySize" class="col col-md-8">
+                        <span>
+                            ${initialData.publicKeyAlgorithm} / ${initialData.publicKeySize} bits
+                        </span>
+                    </div>
                 </div>
             </c:if>
             <!-- Add the different fields based on the certificate type -->
             <c:choose>
                 <c:when test="${param.type=='certificateauthority'}">
                     <div class="row">
+                        <div class="col-md-1 col-md-offset-1"><span class="colHeader">X509 Credential Version</span></div>
+                        <div id="credentialVersion" class="col col-md-8 vertical">${initialData.x509Version} (v${initialData.x509Version + 1})</div>
+                    </div>
+                    <div class="row">
                         <div class="col-md-1 col-md-offset-1"><span class="colHeader">Subject Key Identifier</span></div>
                         <div id="subjectKeyIdentifier" class="col col-md-8"></div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-1 col-md-offset-1"><span class="colHeader">Policy Reference</span></div>
+                        <div id="policyReference" class="col col-md-8">${initialData.policyReference}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-1 col-md-offset-1"><span class="colHeader">Key Usage</span></div>
+                        <div id="keyUsage" class="col col-md-8 vertical">${initialData.keyUsage}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-1 col-md-offset-1"><span class="colHeader">Extended Key Usage</span></div>
+                        <div id="extendedKeyUsage" class="col col-md-8 vertical">${initialData.extendedKeyUsage}</div>
+                    </div>
                 </c:when>
                 <c:when test="${param.type=='endorsement'}">
+                    <div class="row">
+                        <div class="col-md-1 col-md-offset-1"><span class="colHeader">X509 Credential Version</span></div>
+                        <div id="credentialVersion" class="col col-md-8 vertical">${initialData.x509Version} (v${initialData.x509Version + 1})</div>
+                    </div>
                     <div class="row">
                         <div class="col-md-1 col-md-offset-1"><span class="colHeader">Credential Type</span></div>
                         <div id="credentialType" class="col col-md-8">${initialData.credentialType}</div>
@@ -142,6 +178,14 @@
                         <div class="col-md-1 col-md-offset-1"><span class="colHeader">Revocation Locator</span></div>
                         <div id="revocationLocator" class="col col-md-8">${initialData.revocationLocator}</div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-1 col-md-offset-1"><span class="colHeader">Key Usage</span></div>
+                        <div id="keyUsage" class="col col-md-8 vertical">${initialData.keyUsage}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-1 col-md-offset-1"><span class="colHeader">Extended Key Usage</span></div>
+                        <div id="extendedKeyUsage" class="col col-md-8 vertical">${initialData.extendedKeyUsage}</div>
+                    </div>
                     <!-- Need to test this -->
                     <div class="row">
                         <div class="col-md-1 col-md-offset-1"><span class="colHeader">TPM Specification</span></div>
@@ -154,11 +198,11 @@
                     <div class="row">
                         <div class="col-md-1 col-md-offset-1"><span class="colHeader">TPM Security Assertion</span></div>
                         <div id="tpmSecurityAssertion" class="col col-md-8">
-                        <div>Version:&nbsp;<span>${initialData.TPMSecurityAssertionsVersion}</span></div>
-                        <div>Field Upgradeable:&nbsp;<span>${initialData.TPMSecurityAssertionsFieldUpgradeable}</span></div>
-                        <div>ek Generation Type:&nbsp;<span>${initialData.TPMSecurityAssertionsEkGenType}</span></div>
-                        <div>ek Generation Location:&nbsp;<span>${initialData.TPMSecurityAssertionsEkGenLoc}</span></div>
-                        <div>ek Certificate Generation Location:&nbsp;<span>${initialData.TPMSecurityAssertionsEkCertGenLoc}</span></div>
+                            <div>Version:&nbsp;<span>${initialData.TPMSecurityAssertionsVersion}</span></div>
+                            <div>Field Upgradeable:&nbsp;<span>${initialData.TPMSecurityAssertionsFieldUpgradeable}</span></div>
+                            <div>ek Generation Type:&nbsp;<span>${initialData.TPMSecurityAssertionsEkGenType}</span></div>
+                            <div>ek Generation Location:&nbsp;<span>${initialData.TPMSecurityAssertionsEkGenLoc}</span></div>
+                            <div>ek Certificate Generation Location:&nbsp;<span>${initialData.TPMSecurityAssertionsEkCertGenLoc}</span></div>
                         </div>
                     </div>
                 </c:when>
@@ -185,20 +229,20 @@
                             <c:if test="${not empty initialData.holderIssuer}">
                                 <div><span>${initialData.holderIssuer}</span></div>
                             </c:if>
-                                <div id="certificateid">
-                                    <c:choose>
-                                        <c:when test="${not empty initialData.ekId}">
-                                            <span>
-                                                <a href="${portal}/certificate-details?id=${initialData.ekId}&type=endorsement">
-                                                    ${initialData.holderSerialNumber}
-                                                </a>
-                                            </span>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <div><span>${initialData.holderSerialNumber}</span></div>
-                                        </c:otherwise>
-                                    </c:choose>
-                                </div>                                
+                            <div id="certificateid">
+                                <c:choose>
+                                    <c:when test="${not empty initialData.ekId}">
+                                        <span>
+                                            <a href="${portal}/certificate-details?id=${initialData.ekId}&type=endorsement">
+                                                ${initialData.holderSerialNumber}
+                                            </a>
+                                        </span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <div><span>${initialData.holderSerialNumber}</span></div>
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>                                
                         </div>
                     </div>
                     <div class="row">
@@ -232,6 +276,10 @@
                         </c:otherwise>
                     </c:choose>
                     <div class="row">
+                        <div class="col-md-1 col-md-offset-1"><span class="colHeader">Policy Reference</span></div>
+                        <div id="policyReference" class="col col-md-8">${initialData.policyReference}</div>
+                    </div>
+                    <div class="row">
                         <div class="col-md-1 col-md-offset-1"><span class="colHeader">TCG Credential Specification Version</span></div>
                         <div id="majorVersion" class="col col-md-8 vertical">${initialData.majorVersion}.${initialData.minorVersion}.${initialData.revisionLevel}</div>
                     </div>
@@ -260,12 +308,12 @@
                                             <h4 class="panel-title">
                                                 <a role="button" data-toggle="collapse" data-parent="#tbbsecurity" class="collapsed"
                                                    href="#ccinfocollapse" aria-expanded="false" aria-controls="ccinfocollapse">
-                                                  Common Criteria Measures Information
+                                                    Common Criteria Measures Information
                                                 </a>
                                             </h4>
                                         </div>
                                         <div id="ccinfocollapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
-                                          <div class="panel-body">
+                                            <div class="panel-body">
                                                 <div id="ccinfo" class="row">
                                                     <div class="tbbsecurityLine">
                                                         <span class="fieldHeader">Version:</span>
@@ -346,7 +394,7 @@
                                                             <div class="tbbsecurityLine">
                                                                 <span class="fieldHeader">Target Hash Value:</span>
                                                                 <span class="fieldValue">${ccinfo.getTargetUri().getHashValue()}</span>
-                                                           </div>
+                                                            </div>
                                                         </c:if>
                                                     </c:if>
                                                 </div>
@@ -362,12 +410,12 @@
                                             <h4 class="panel-title">
                                                 <a role="button" data-toggle="collapse" data-parent="#tbbsecurity" class="collapsed"
                                                    href="#fipscollapse" aria-expanded="false" aria-controls="fipscollapse">
-                                                  FIPS Level
+                                                    FIPS Level
                                                 </a>
                                             </h4>
                                         </div>
                                         <div id="fipscollapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
-                                          <div class="panel-body">
+                                            <div class="panel-body">
                                                 <div id="fipsLevel" class="row">
                                                     <div class="tbbsecurityLine">
                                                         <span class="fieldHeader">Version:</span>
@@ -398,12 +446,12 @@
                                         <h4 class="panel-title">
                                             <a role="button" data-toggle="collapse" data-parent="#tbbsecurity" class="collapsed"
                                                href="#iso9000collapse" aria-expanded="false" aria-controls="iso9000collapse">
-                                              ISO 9000
+                                                ISO 9000
                                             </a>
                                         </h4>
                                     </div>
                                     <div id="iso9000collapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
-                                      <div class="panel-body">
+                                        <div class="panel-body">
                                             <div id="iso9000" class="row">
                                                 <div class="tbbsecurityLine">
                                                     <c:choose>
@@ -444,21 +492,34 @@
                                             <h4 class="panel-title">
                                                 <a role="button" data-toggle="collapse" data-parent="#platformConfiguration" class="collapsed"
                                                    href="#componentIdentifiercollapse" aria-expanded="true" aria-controls="componentIdentifiercollapse">
-                                                  Components
+                                                    Components
                                                 </a>
                                             </h4>
                                         </div>
                                         <div id="componentIdentifiercollapse" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne" aria-expanded="true">
-                                          <div class="panel-body">
+                                            <div class="panel-body">
                                                 <div id="componentIdentifier" class="row">
                                                     <c:forEach items="${initialData.componentsIdentifier}" var="component">
                                                         <div class="component col col-md-4">
                                                             <div class="panel panel-default">
                                                                 <div class="panel-heading">
-                                                                    <span data-toggle="tooltip" data-placement="top" title="Manufacturer">${component.getComponentManufacturer()}</span>&nbsp;-&nbsp;
-                                                                    <span data-toggle="tooltip" data-placement="top" title="Model">${component.getComponentModel()}</span>
+                                                                    <c:choose>
+                                                                        <c:when test="${not empty fn:trim(component.getComponentClass())}">
+                                                                            <span data-toggle="tooltip" data-placement="top" title="Component Class">${component.getComponentClass()}</span>
+                                                                        </c:when>
+                                                                        <c:otherwise>
+                                                                            <span data-toggle="tooltip" data-placement="top" title="Manufacturer">${component.getComponentManufacturer()}</span>&nbsp;-&nbsp;
+                                                                            <span data-toggle="tooltip" data-placement="top" title="Model">${component.getComponentModel()}</span>
+                                                                        </c:otherwise>
+                                                                    </c:choose>
                                                                 </div>
                                                                 <div class="panel-body">
+                                                                    <c:if test="${not empty fn:trim(component.getComponentClass())}">
+                                                                        <span class="fieldHeader">Manufacturer:</span>
+                                                                        <span class="fieldValue">${component.getComponentManufacturer()}</span><br/>
+                                                                        <span class="fieldHeader">Model</span>
+                                                                        <span class="fieldValue">${component.getComponentModel()}</span><br/>
+                                                                    </c:if>
                                                                     <c:if test="${not empty fn:trim(component.getComponentSerial())}">
                                                                         <span class="fieldHeader">Serial Number:</span>
                                                                         <span class="fieldValue">${component.getComponentSerial()}</span><br/>
@@ -495,12 +556,12 @@
                                             <h4 class="panel-title">
                                                 <a role="button" data-toggle="collapse" data-parent="#platformConfiguration" class="collapsed"
                                                    href="#platformPropertiescollapse" aria-expanded="false" aria-controls="platformPropertiescollapse">
-                                                  Platform Properties
+                                                    Platform Properties
                                                 </a>
                                             </h4>
                                         </div>
                                         <div id="platformPropertiescollapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
-                                          <div class="panel-body">
+                                            <div class="panel-body">
                                                 <div id="platformProperties" class="row">
                                                     <c:forEach items="${initialData.platformProperties}" var="property">
                                                         <div class="component col col-md-4">
@@ -526,12 +587,12 @@
                                             <h4 class="panel-title">
                                                 <a role="button" data-toggle="collapse" data-parent="#platformConfiguration" class="collapsed"
                                                    href="#platformPropertiesURIcollapse" aria-expanded="false" aria-controls="platformPropertiesURIcollapse">
-                                                  Platform Properties URI
+                                                    Platform Properties URI
                                                 </a>
                                             </h4>
                                         </div>
                                         <div id="platformPropertiesURIcollapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
-                                          <div class="panel-body">
+                                            <div class="panel-body">
                                                 <div id="platformPropertiesURI" class="row">
                                                     <span class="fieldHeader">URI:</span>
                                                     <a href="${initialData.platformPropertiesURI.getUniformResourceIdentifier()}">
@@ -581,13 +642,13 @@
             </c:choose>
         </div>
         <script>
-            $(document).ready(function() {
+            $(document).ready(function () {
                 var type = "${param.type}";
                 var signature = ${initialData.signature};
                 var serialNumber = '${initialData.serialNumber}';
 
                 //Format validity time
-                $("#validity span").each(function(){
+                $("#validity span").each(function () {
                     $(this).text(formatDateTime($(this).text()));
                 });
 
@@ -597,39 +658,39 @@
                 //Convert byte array to string
                 $("#serialNumber").html(parseSerialNumber(serialNumber));
 
-                <c:if test="${not empty initialData.encodedPublicKey}">
-                    //Change publick key byte to hex
-                    var publicKey = ${initialData.encodedPublicKey};
-                    $("#encodedPublicKey").html(byteToHexString(publicKey));
-                </c:if>
+            <c:if test="${not empty initialData.encodedPublicKey}">
+                //Change publick key byte to hex
+                var publicKey = ${initialData.encodedPublicKey};
+                $("#encodedPublicKey").html(byteToHexString(publicKey));
+            </c:if>
 
-                <c:if test="${not empty initialData.subjectKeyIdentifier}">
-                    //Change subject byte to hex only for CACertificate
-                    if(type === "certificateauthority"){
-                        var subjectKeyIdentifier = ${initialData.subjectKeyIdentifier};
-                        $("#subjectKeyIdentifier").html(byteToHexString(subjectKeyIdentifier));
-                    }
-                </c:if>
+            <c:if test="${not empty initialData.subjectKeyIdentifier}">
+                //Change subject byte to hex only for CACertificate
+                if (type === "certificateauthority") {
+                    var subjectKeyIdentifier = ${initialData.subjectKeyIdentifier};
+                    $("#subjectKeyIdentifier").html(byteToHexString(subjectKeyIdentifier));
+                }
+            </c:if>
 
                 //Initiliaze tooltips
                 $('[data-toggle="tooltip"]').tooltip();
 
                 //Vertical alignment on data columns
-                $('.vertical').each(function(){
+                $('.vertical').each(function () {
                     $(this).css({
                         'line-height': $(this).height() + 'px'
                     });
-                });                
+                });
 
                 //Change link width
-                $("#headingOne, #headingTwo, #headingThree").each(function(e) {
+                $("#headingOne, #headingTwo, #headingThree").each(function (e) {
                     var width = $(this).width();
                     //Get link width
                     var linkWidth = $(this).find('a').width();
 
                     //Change width for the link
                     $(this).find('a').css({
-                        "padding-right": (width-linkWidth) + "px"
+                        "padding-right": (width - linkWidth) + "px"
                     });
                 });
             });

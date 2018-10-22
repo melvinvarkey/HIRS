@@ -87,9 +87,7 @@ public class CertificateAuthorityCredential extends Certificate {
      */
     public CertificateAuthorityCredential(final Path certificatePath)
             throws IOException {
-        super(certificatePath);
-        this.subjectKeyIdentifier =
-                getX509Certificate().getExtensionValue(SUBJECT_KEY_IDENTIFIER_EXTENSION);
+        this(readBytes(certificatePath));
     }
 
     /**
