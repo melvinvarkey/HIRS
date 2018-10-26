@@ -58,7 +58,9 @@ public final class CertificateStringMapBuilder {
                 data.put("isSelfSigned", "false");
             }
 
-            data.put("policyReference", certificate.getPolicyReference());
+            data.put("crlPoints", certificate.getCrlPoints());
+            data.put("policyReference", certificate.getPolicyRef());
+            //certificate.getPolicyReference());
             data.put("signatureAlgorithm", certificate.getSignatureAlgorithm());
             if (certificate.getEncodedPublicKey() != null) {
                 data.put("encodedPublicKey",
@@ -72,6 +74,13 @@ public final class CertificateStringMapBuilder {
             if (certificate.getKeyUsage() != null) {
                 data.put("keyUsage", certificate.getKeyUsage());
             }
+            //CPSuri
+            try {
+                data.put("CPSuri", certificate.getCPSuri());
+            } catch (IOException ioEx) {
+                LOGGER.warn("CPS URI Error.");
+            }
+            data.put("credentialType", certificate.getCredentialType());
 
             if (certificate.getExtendedKeyUsage() != null
                     && !certificate.getExtendedKeyUsage().isEmpty()) {
@@ -210,9 +219,10 @@ public final class CertificateStringMapBuilder {
      * @param uuid ID for the certificate.
      * @param certificateManager the certificate manager for retrieving certs.
      * @return a hash map with the endorsement certificate information.
+     * @throws java.io.IOException CPS URI
      */
     public static HashMap<String, String> getEndorsementInformation(final UUID uuid,
-            final CertificateManager certificateManager) {
+            final CertificateManager certificateManager) throws IOException {
         HashMap<String, String> data = new HashMap<>();
         EndorsementCredential certificate = EndorsementCredential
                 .select(certificateManager)
@@ -221,7 +231,6 @@ public final class CertificateStringMapBuilder {
         if (certificate != null) {
             data.putAll(getGeneralCertificateInfo(certificate, certificateManager));
             // Set extra fields
-            data.put("credentialType", certificate.getCredentialType());
             data.put("manufacturer", certificate.getManufacturer());
             data.put("model", certificate.getModel());
             data.put("version", certificate.getVersion());
@@ -265,7 +274,7 @@ public final class CertificateStringMapBuilder {
                 .getCertificate();
         if (certificate != null) {
             data.putAll(getGeneralCertificateInfo(certificate, certificateManager));
-            data.put("credentialType", certificate.getCredentialType());
+//            data.put("credentialType", certificate.getCredentialType());
             data.put("manufacturer", certificate.getManufacturer());
             data.put("model", certificate.getModel());
             data.put("version", certificate.getVersion());
@@ -292,8 +301,6 @@ public final class CertificateStringMapBuilder {
 
             //x509 credential version
             data.put("x509Version", certificate.getX509CredentialVersion());
-            //CPSuri
-            data.put("CPSuri", certificate.getCPSuri());
 
             //Get platform Configuration values and set map with it
             PlatformConfiguration platformConfiguration = certificate.getPlatformConfiguration();
@@ -348,9 +355,10 @@ public final class CertificateStringMapBuilder {
      * @param uuid ID for the certificate.
      * @param certificateManager the certificate manager for retrieving certs.
      * @return a hash map with the endorsement certificate information.
+     * @throws java.io.IOException CPS URI
      */
     public static HashMap<String, String> getIssuedInformation(final UUID uuid,
-            final CertificateManager certificateManager) {
+            final CertificateManager certificateManager) throws IOException {
         HashMap<String, String> data = new HashMap<>();
         IssuedAttestationCertificate certificate = IssuedAttestationCertificate
                 .select(certificateManager)

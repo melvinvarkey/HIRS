@@ -133,6 +133,18 @@
                         <div id="credentialVersion" class="col col-md-8 vertical">${initialData.x509Version} (v${initialData.x509Version + 1})</div>
                     </div>
                     <div class="row">
+                        <div class="col-md-1 col-md-offset-1"><span class="colHeader">Credential Type</span></div>
+                        <div id="credentialType" class="col col-md-8">${initialData.credentialType}</div>
+                    </div>
+                    <c:if test="${not empty initialData.CPSuri}">
+                        <div class="row">
+                            <div class="col-md-1 col-md-offset-1"><span class="colHeader">Certification Practice Statement URI</span></div>
+                            <div id="credentialCPSuri" class="col col-md-8 vertical">
+                                <a href="${initialData.CPSuri}"> ${initialData.CPSuri}</a>
+                            </div>
+                        </div>
+                    </c:if>
+                    <div class="row">
                         <div class="col-md-1 col-md-offset-1"><span class="colHeader">Subject Key Identifier</span></div>
                         <div id="subjectKeyIdentifier" class="col col-md-8"></div>
                     </div>
@@ -158,6 +170,14 @@
                         <div class="col-md-1 col-md-offset-1"><span class="colHeader">Credential Type</span></div>
                         <div id="credentialType" class="col col-md-8">${initialData.credentialType}</div>
                     </div>
+                    <c:if test="${not empty initialData.CPSuri}">
+                        <div class="row">
+                            <div class="col-md-1 col-md-offset-1"><span class="colHeader">Certification Practice Statement URI</span></div>
+                            <div id="credentialCPSuri" class="col col-md-8 vertical">
+                                <a href="${initialData.CPSuri}"> ${initialData.CPSuri}</a>
+                            </div>
+                        </div>
+                    </c:if>
                     <div class="row">
                         <div class="col-md-1 col-md-offset-1"><span class="colHeader">Manufacturer</span></div>
                         <div id="manufacturer" class="col col-md-8">${initialData.manufacturer}</div>
@@ -218,8 +238,8 @@
                     <c:if test="${not empty initialData.CPSuri}">
                         <div class="row">
                             <div class="col-md-1 col-md-offset-1"><span class="colHeader">Certification Practice Statement URI</span></div>
-                            <div id="credentialType" class="col col-md-8 vertical">
-                                <a href="${initialData.CPSuri}"> ${initialData.CPSuri}</a>
+                            <div id="credentialCPSuri" class="col col-md-8 vertical">
+                                <a href="${initialData.CPSuri}">${initialData.CPSuri}</a>
                             </div>
                         </div>
                     </c:if>
@@ -275,6 +295,10 @@
                             </div>
                         </c:otherwise>
                     </c:choose>
+                    <div class="row">
+                        <div class="col-md-1 col-md-offset-1"><span class="colHeader">CRL Distribution Points</span></div>
+                        <div id="crlPoints" class="col col-md-8">${initialData.crlPoints}</div>
+                    </div>
                     <div class="row">
                         <div class="col-md-1 col-md-offset-1"><span class="colHeader">Policy Reference</span></div>
                         <div id="policyReference" class="col col-md-8">${initialData.policyReference}</div>

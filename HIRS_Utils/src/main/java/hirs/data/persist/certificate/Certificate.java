@@ -52,8 +52,15 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.x509.CertificatePolicies;
+import org.bouncycastle.asn1.x509.PolicyInformation;
+import org.bouncycastle.asn1.x509.PolicyQualifierInfo;
+import org.bouncycastle.asn1.x509.UserNotice;
 
 
 /**
@@ -64,6 +71,20 @@ import java.util.Objects;
 @Entity
 public abstract class Certificate extends ArchivableEntity {
 
+    /**
+     * a variable.
+     */
+    @SuppressWarnings("PMD.AvoidUsingHardCodedIP") // this is not an IP address; PMD thinks it is
+    public static final String AUTHORITY_KEY_IDENTIFIER = "2.5.29.35";
+    /**
+     * a variable.
+     */
+    @SuppressWarnings("PMD.AvoidUsingHardCodedIP") // this is not an IP address; PMD thinks it is
+    public static final String POLICY_CONTRAINTS = "2.5.29.36";
+    /**
+     * a variable.
+     */
+    public static final String CERTIFICATE_PRACTICE_STATEMENT = "1.3.6.1.5.5.7.2.1";
     /**
      * a variable.
      */
@@ -93,6 +114,9 @@ public abstract class Certificate extends ArchivableEntity {
      */
     public static final String ECDSA_STRING = "SHA256WithECDSA";
 
+    // These are Object Identifiers (OIDs) for sections in the credentials
+    private static final String POLICY_QUALIFIER_CPSURI = "1.3.6.1.5.5.7.2.1";
+    private static final String POLICY_QUALIFIER_USER_NOTICE = "1.3.6.1.5.5.7.2.2";
     private static final int KEY_USAGE_BIT0 = 0;
     private static final int KEY_USAGE_BIT1 = 1;
     private static final int KEY_USAGE_BIT2 = 2;
@@ -241,6 +265,13 @@ public abstract class Certificate extends ArchivableEntity {
     @JsonIgnore
     private final int certAndTypeHash;
 
+    /*
+     * this field is part of the TCG EC specification, but has not yet been found in
+     * manufacturer-provided ECs, and is therefore not currently parsed
+     */
+    @Column
+    private String credentialType = "TCPA Trusted Platform Module Endorsement";
+
     /**
      * Holds the name of the 'holderSerialNumber' field.
      */
@@ -257,6 +288,7 @@ public abstract class Certificate extends ArchivableEntity {
     private String publicKeyAlgorithm;
     private String keyUsage;
     private String extendedKeyUsage;
+    private byte[] policyConstraints;
 
     /**
      * Default constructor necessary for Hibernate.
@@ -280,6 +312,7 @@ public abstract class Certificate extends ArchivableEntity {
         this.certAndTypeHash = 0;
         this.holderSerialNumber = BigInteger.ZERO;
         this.holderIssuer = null;
+        this.policyConstraints = null;
     }
 
     /**
@@ -325,6 +358,10 @@ public abstract class Certificate extends ArchivableEntity {
 
         this.certificateBytes = trimCertificate(this.certificateBytes);
 
+        Map<String, String> policyQualifier
+                = getPolicyQualifier(getAttributeCertificate().getAcinfo());
+        credentialType = policyQualifier.get("userNotice");
+
         // Extract certificate data
         switch (getCertificateType()) {
             case X509_CERTIFICATE:
@@ -347,6 +384,8 @@ public abstract class Certificate extends ArchivableEntity {
                 this.holderSerialNumber = BigInteger.ZERO;
                 this.issuerOrganization = getOrganization(this.issuer);
                 this.subjectOrganization = getOrganization(this.subject);
+                this.policyConstraints = x509Certificate
+                        .getExtensionValue(POLICY_CONTRAINTS);
 
                 this.keyUsage = parseKeyUsage(x509Certificate.getKeyUsage());
                 try {
@@ -702,6 +741,43 @@ public abstract class Certificate extends ArchivableEntity {
     }
 
     /**
+     * Getter for the CRL Distribution Points.
+     * @return CRLs
+     */
+    public String getCrlPoints() {
+        return "";
+    }
+
+    /**
+     * Getter for the Policy Reference.
+     * @return Refs
+     */
+    public String getPolicyRef() {
+        return "";
+    }
+
+    /**
+     * Get the Platform Credential type.
+     *
+     * @return the credential type
+     */
+    public String getCredentialType() {
+        return credentialType;
+    }
+
+    /**
+     * Gets the policy statement.
+     * @return the getter
+     */
+    public byte[] getPolicyConstraints() {
+        if (policyConstraints != null) {
+            return policyConstraints.clone();
+        }
+
+        return new byte[0];
+    }
+
+    /**
      * Gets the keyusage info.
      * @return the world.
      */
@@ -979,5 +1055,62 @@ public abstract class Certificate extends ArchivableEntity {
         } catch (ParseException e) {
             throw new IllegalStateException("unable to recover date: " + e.getMessage());
         }
+    }
+
+    /**
+     * Get the cPSuri from the Certificate Policies.
+     * @return cPSuri from the CertificatePolicies.
+     * @throws IOException when reading the certificate.
+     */
+    public String getCPSuri() throws IOException {
+        Map<String, String> policyQualifier
+                = getPolicyQualifier(getAttributeCertificate().getAcinfo());
+        if (policyQualifier.get("cpsURI") != null && !policyQualifier.get("cpsURI").isEmpty()) {
+            return policyQualifier.get("cpsURI");
+        }
+
+        return null;
+    }
+
+     /**
+     * Get the PolicyQualifier from the Certificate Policies Extension.
+     *
+     * @param certificate Attribute Certificate information
+     * @return Policy Qualifier from the Certificate Policies Extension
+     */
+    public static Map<String, String> getPolicyQualifier(
+                final AttributeCertificateInfo certificate) {
+        CertificatePolicies certPolicies
+                = CertificatePolicies.fromExtensions(certificate.getExtensions());
+        Map<String, String> policyQualifiers = new HashMap<>();
+        String userNoticeQualifier = "";
+        String cpsURI = "";
+
+        if (certPolicies != null) {
+            //Must contain at least one Policy
+            for (PolicyInformation policy : certPolicies.getPolicyInformation()) {
+                for (ASN1Encodable pQualifierInfo: policy.getPolicyQualifiers().toArray()) {
+                    PolicyQualifierInfo info = PolicyQualifierInfo.getInstance(pQualifierInfo);
+                    //Substract the data based on the OID
+                    switch (info.getPolicyQualifierId().getId()) {
+                        case POLICY_QUALIFIER_CPSURI:
+                            cpsURI = DERIA5String.getInstance(info.getQualifier()).getString();
+                            break;
+                        case POLICY_QUALIFIER_USER_NOTICE:
+                            UserNotice userNotice = UserNotice.getInstance(info.getQualifier());
+                            userNoticeQualifier = userNotice.getExplicitText().getString();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+
+        //Add to map
+        policyQualifiers.put("userNotice", userNoticeQualifier);
+        policyQualifiers.put("cpsURI", cpsURI);
+
+        return policyQualifiers;
     }
 }

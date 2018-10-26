@@ -162,8 +162,8 @@ public class EndorsementCredential extends DeviceAssociatedCertificate {
      * this field is part of the TCG EC specification, but has not yet been found in
      * manufacturer-provided ECs, and is therefore not currently parsed
      */
-    @Column
-    private String credentialType = "TCPA Trusted Platform Module Endorsement";
+//    @Column
+//    private String credentialType = "TCPA Trusted Platform Module Endorsement";
 
     private static final String MANUFACTURER_FIELD = "manufacturer";
     @Column
@@ -632,9 +632,9 @@ public class EndorsementCredential extends DeviceAssociatedCertificate {
      * Get the credential type label.
      * @return the credential type label.
      */
-    public String getCredentialType() {
-        return credentialType;
-    }
+//    public String getCredentialType() {
+//        return credentialType;
+//    }
 
     /**
      * Get the TPM Manufacturer.
@@ -708,10 +708,10 @@ public class EndorsementCredential extends DeviceAssociatedCertificate {
 
         EndorsementCredential that = (EndorsementCredential) o;
 
-        if (credentialType != null ? !credentialType.equals(that.credentialType)
-                : that.credentialType != null) {
-            return false;
-        }
+//        if (this.credentialType != null ? !credentialType.equals(that.credentialType)
+//                : that.credentialType != null) {
+//            return false;
+//        }
         if (manufacturer != null ? !manufacturer.equals(that.manufacturer)
                 : that.manufacturer != null) {
             return false;
@@ -740,7 +740,7 @@ public class EndorsementCredential extends DeviceAssociatedCertificate {
     @SuppressWarnings({"checkstyle:avoidinlineconditionals", "checkstyle:magicnumber" })
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (credentialType != null ? credentialType.hashCode() : 0);
+//        result = 31 * result + (credentialType != null ? credentialType.hashCode() : 0);
         result = 31 * result + (manufacturer != null ? manufacturer.hashCode() : 0);
         result = 31 * result + (model != null ? model.hashCode() : 0);
         result = 31 * result + (version != null ? version.hashCode() : 0);
