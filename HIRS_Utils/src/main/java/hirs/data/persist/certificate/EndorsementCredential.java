@@ -96,8 +96,6 @@ public class EndorsementCredential extends DeviceAssociatedCertificate {
 
     private static final String TPM_SECURITY_ASSERTIONS = "2.23.133.2.18";
 
-    private static final String CREDENTIAL_TYPE_LABEL = "1.3.6.1.5.5.7.2.2";
-
     // number of extra bytes potentially present in a cert header.
     private static final int EK_CERT_HEADER_BYTE_COUNT = 7;
 
@@ -162,8 +160,8 @@ public class EndorsementCredential extends DeviceAssociatedCertificate {
      * this field is part of the TCG EC specification, but has not yet been found in
      * manufacturer-provided ECs, and is therefore not currently parsed
      */
-//    @Column
-//    private String credentialType = "TCPA Trusted Platform Module Endorsement";
+    @Column
+    private String credentialType = "TCPA Trusted Platform Module Endorsement";
 
     private static final String MANUFACTURER_FIELD = "manufacturer";
     @Column
@@ -278,7 +276,8 @@ public class EndorsementCredential extends DeviceAssociatedCertificate {
         expectedOids.add(TPM_MANUFACTURER);
         expectedOids.add(TPM_SPECIFICATION);
         expectedOids.add(TPM_SECURITY_ASSERTIONS);
-        expectedOids.add(CREDENTIAL_TYPE_LABEL);
+        expectedOids.add(POLICY_QUALIFIER_USER_NOTICE);
+        expectedOids.add(POLICY_QUALIFIER_CPSURI);
         parsedFields = new HashMap<>();
     }
 
@@ -329,6 +328,8 @@ public class EndorsementCredential extends DeviceAssociatedCertificate {
             } else if (oid.equals(TPM_MANUFACTURER)) {
                 manufacturer = value.toString();
                 LOGGER.debug("Found TPM Manufacturer: " + manufacturer);
+            } else if (oid.equals(POLICY_QUALIFIER_USER_NOTICE)) {
+                credentialType = value.toString();
             }
         }
     }
@@ -629,12 +630,27 @@ public class EndorsementCredential extends DeviceAssociatedCertificate {
     }
 
     /**
+     * Get the cPSuri from the Certificate Policies.
+     * @return cPSuri from the CertificatePolicies.
+     */
+    public String getCPSuri() {
+        String cps = "NOT FOUND";
+        if (parsedFields != null
+                && parsedFields.containsKey(POLICY_QUALIFIER_CPSURI)) {
+            cps = parsedFields.get(cps).toString();
+        }
+
+        return cps;
+    }
+
+
+    /**
      * Get the credential type label.
      * @return the credential type label.
      */
-//    public String getCredentialType() {
-//        return credentialType;
-//    }
+    public String getCredentialType() {
+        return credentialType;
+    }
 
     /**
      * Get the TPM Manufacturer.
@@ -708,10 +724,10 @@ public class EndorsementCredential extends DeviceAssociatedCertificate {
 
         EndorsementCredential that = (EndorsementCredential) o;
 
-//        if (this.credentialType != null ? !credentialType.equals(that.credentialType)
-//                : that.credentialType != null) {
-//            return false;
-//        }
+        if (this.credentialType != null ? !credentialType.equals(that.credentialType)
+                : that.credentialType != null) {
+            return false;
+        }
         if (manufacturer != null ? !manufacturer.equals(that.manufacturer)
                 : that.manufacturer != null) {
             return false;
@@ -740,7 +756,7 @@ public class EndorsementCredential extends DeviceAssociatedCertificate {
     @SuppressWarnings({"checkstyle:avoidinlineconditionals", "checkstyle:magicnumber" })
     public int hashCode() {
         int result = super.hashCode();
-//        result = 31 * result + (credentialType != null ? credentialType.hashCode() : 0);
+        result = 31 * result + (credentialType != null ? credentialType.hashCode() : 0);
         result = 31 * result + (manufacturer != null ? manufacturer.hashCode() : 0);
         result = 31 * result + (model != null ? model.hashCode() : 0);
         result = 31 * result + (version != null ? version.hashCode() : 0);

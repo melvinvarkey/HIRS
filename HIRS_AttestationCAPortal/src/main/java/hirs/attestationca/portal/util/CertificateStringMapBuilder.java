@@ -74,13 +74,6 @@ public final class CertificateStringMapBuilder {
             if (certificate.getKeyUsage() != null) {
                 data.put("keyUsage", certificate.getKeyUsage());
             }
-            //CPSuri
-            try {
-                data.put("CPSuri", certificate.getCPSuri());
-            } catch (IOException ioEx) {
-                LOGGER.warn("CPS URI Error.");
-            }
-            data.put("credentialType", certificate.getCredentialType());
 
             if (certificate.getExtendedKeyUsage() != null
                     && !certificate.getExtendedKeyUsage().isEmpty()) {
@@ -204,6 +197,9 @@ public final class CertificateStringMapBuilder {
             data.putAll(getGeneralCertificateInfo(certificate, certificateManager));
             data.put("subjectKeyIdentifier",
                     Arrays.toString(certificate.getSubjectKeyIdentifier()));
+            data.put("credentialType", certificate.getCredentialType());
+            //CPSuri
+            data.put("CPSuri", certificate.getCPSuri());
             //x509 credential version
             data.put("x509Version", Integer.toString(certificate
                     .getX509CredentialVersion()));
@@ -219,10 +215,9 @@ public final class CertificateStringMapBuilder {
      * @param uuid ID for the certificate.
      * @param certificateManager the certificate manager for retrieving certs.
      * @return a hash map with the endorsement certificate information.
-     * @throws java.io.IOException CPS URI
      */
     public static HashMap<String, String> getEndorsementInformation(final UUID uuid,
-            final CertificateManager certificateManager) throws IOException {
+            final CertificateManager certificateManager) {
         HashMap<String, String> data = new HashMap<>();
         EndorsementCredential certificate = EndorsementCredential
                 .select(certificateManager)
@@ -235,6 +230,10 @@ public final class CertificateStringMapBuilder {
             data.put("model", certificate.getModel());
             data.put("version", certificate.getVersion());
             data.put("revocationLocator", certificate.getRevocationLocator());
+            data.put("credentialType", certificate.getCredentialType());
+            //CPSuri
+            data.put("CPSuri", certificate.getCPSuri());
+
             //x509 credential version
             data.put("x509Version", Integer.toString(certificate
                     .getX509CredentialVersion()));
@@ -274,7 +273,7 @@ public final class CertificateStringMapBuilder {
                 .getCertificate();
         if (certificate != null) {
             data.putAll(getGeneralCertificateInfo(certificate, certificateManager));
-//            data.put("credentialType", certificate.getCredentialType());
+            data.put("credentialType", certificate.getCredentialType());
             data.put("manufacturer", certificate.getManufacturer());
             data.put("model", certificate.getModel());
             data.put("version", certificate.getVersion());
@@ -291,6 +290,12 @@ public final class CertificateStringMapBuilder {
                             .toString(Certificate.HEX_BASE)
                             .replaceAll("(?<=..)(..)", ":$1"));
             data.put("holderIssuer", certificate.getHolderIssuer());
+            //CPSuri
+            try {
+                data.put("CPSuri", certificate.getCPSuri());
+            } catch (IOException ioEx) {
+                LOGGER.warn("CPS URI Error.");
+            }
             EndorsementCredential ekCertificate = EndorsementCredential
                     .select(certificateManager)
                     .bySerialNumber(certificate.getHolderSerialNumber())
@@ -355,10 +360,9 @@ public final class CertificateStringMapBuilder {
      * @param uuid ID for the certificate.
      * @param certificateManager the certificate manager for retrieving certs.
      * @return a hash map with the endorsement certificate information.
-     * @throws java.io.IOException CPS URI
      */
     public static HashMap<String, String> getIssuedInformation(final UUID uuid,
-            final CertificateManager certificateManager) throws IOException {
+            final CertificateManager certificateManager) {
         HashMap<String, String> data = new HashMap<>();
         IssuedAttestationCertificate certificate = IssuedAttestationCertificate
                 .select(certificateManager)

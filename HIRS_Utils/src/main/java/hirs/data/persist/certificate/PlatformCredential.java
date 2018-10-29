@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
@@ -29,9 +30,13 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Attribute;
 import org.bouncycastle.asn1.x509.AttributeCertificate;
 import org.bouncycastle.asn1.x509.AttributeCertificateInfo;
+import org.bouncycastle.asn1.x509.CertificatePolicies;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.PolicyInformation;
+import org.bouncycastle.asn1.x509.PolicyQualifierInfo;
+import org.bouncycastle.asn1.x509.UserNotice;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 
@@ -43,9 +48,9 @@ import org.bouncycastle.operator.ContentVerifierProvider;
 @Entity
 public class PlatformCredential extends DeviceAssociatedCertificate {
     private static final Logger LOGGER = LogManager.getLogger(PlatformCredential.class);
-//    // These are Object Identifiers (OIDs) for sections in the credentials
-//    private static final String POLICY_QUALIFIER_CPSURI = "1.3.6.1.5.5.7.2.1";
-//    private static final String POLICY_QUALIFIER_USER_NOTICE = "1.3.6.1.5.5.7.2.2";
+    // These are Object Identifiers (OIDs) for sections in the credentials
+    private static final String POLICY_QUALIFIER_CPSURI = "1.3.6.1.5.5.7.2.1";
+    private static final String POLICY_QUALIFIER_USER_NOTICE = "1.3.6.1.5.5.7.2.2";
 
     //OID for TCG Attributes
     private static final String PLATFORM_MANUFACTURER = "2.23.133.2.4";
@@ -147,8 +152,8 @@ public class PlatformCredential extends DeviceAssociatedCertificate {
         }
     }
 
-//    @Column
-//    private String credentialType = null;
+    @Column
+    private String credentialType = null;
 
     private static final String MANUFACTURER_FIELD = "manufacturer";
     @Column
@@ -308,9 +313,9 @@ public class PlatformCredential extends DeviceAssociatedCertificate {
      *
      * @return the credential type
      */
-//    public String getCredentialType() {
-//        return credentialType;
-//    }
+    public String getCredentialType() {
+        return credentialType;
+    }
 
     /**
      * Get the Platform Manufacturer.
@@ -413,6 +418,8 @@ public class PlatformCredential extends DeviceAssociatedCertificate {
 
     private void parseFields() throws IOException {
         AttributeCertificateInfo certificate = getAttributeCertificate().getAcinfo();
+        Map<String, String> policyQualifier = getPolicyQualifier(certificate);
+        credentialType = policyQualifier.get("userNotice");
 
         //Parse data based on certificate type (1.2 vs 2.0)
         switch (getCredentialType()) {
@@ -571,15 +578,15 @@ public class PlatformCredential extends DeviceAssociatedCertificate {
      * @return cPSuri from the CertificatePolicies.
      * @throws IOException when reading the certificate.
      */
-//    public String getCPSuri() throws IOException {
-//        Map<String, String> policyQualifier
-//                = getPolicyQualifier(getAttributeCertificate().getAcinfo());
-//        if (policyQualifier.get("cpsURI") != null && !policyQualifier.get("cpsURI").isEmpty()) {
-//            return policyQualifier.get("cpsURI");
-//        }
-//
-//        return null;
-//    }
+    public String getCPSuri() throws IOException {
+        Map<String, String> policyQualifier
+                = getPolicyQualifier(getAttributeCertificate().getAcinfo());
+        if (policyQualifier.get("cpsURI") != null && !policyQualifier.get("cpsURI").isEmpty()) {
+            return policyQualifier.get("cpsURI");
+        }
+
+        return null;
+    }
 
     /**
      * Get the Platform Configuration Attribute from the Platform Certificate.
@@ -787,39 +794,39 @@ public class PlatformCredential extends DeviceAssociatedCertificate {
      * @param certificate Attribute Certificate information
      * @return Policy Qualifier from the Certificate Policies Extension
      */
-//    public static Map<String, String> getPolicyQualifier(
-//                final AttributeCertificateInfo certificate) {
-//        CertificatePolicies certPolicies
-//                = CertificatePolicies.fromExtensions(certificate.getExtensions());
-//        Map<String, String> policyQualifiers = new HashMap<>();
-//        String userNoticeQualifier = "";
-//        String cpsURI = "";
-//
-//        if (certPolicies != null) {
-//            //Must contain at least one Policy
-//            for (PolicyInformation policy : certPolicies.getPolicyInformation()) {
-//                for (ASN1Encodable pQualifierInfo: policy.getPolicyQualifiers().toArray()) {
-//                    PolicyQualifierInfo info = PolicyQualifierInfo.getInstance(pQualifierInfo);
-//                    //Substract the data based on the OID
-//                    switch (info.getPolicyQualifierId().getId()) {
-//                        case POLICY_QUALIFIER_CPSURI:
-//                            cpsURI = DERIA5String.getInstance(info.getQualifier()).getString();
-//                            break;
-//                        case POLICY_QUALIFIER_USER_NOTICE:
-//                            UserNotice userNotice = UserNotice.getInstance(info.getQualifier());
-//                            userNoticeQualifier = userNotice.getExplicitText().getString();
-//                            break;
-//                        default:
-//                            break;
-//                    }
-//                }
-//            }
-//        }
-//
-//        //Add to map
-//        policyQualifiers.put("userNotice", userNoticeQualifier);
-//        policyQualifiers.put("cpsURI", cpsURI);
-//
-//        return policyQualifiers;
-//    }
+    public static Map<String, String> getPolicyQualifier(
+                final AttributeCertificateInfo certificate) {
+        CertificatePolicies certPolicies
+                = CertificatePolicies.fromExtensions(certificate.getExtensions());
+        Map<String, String> policyQualifiers = new HashMap<>();
+        String userNoticeQualifier = "";
+        String cpsURI = "";
+
+        if (certPolicies != null) {
+            //Must contain at least one Policy
+            for (PolicyInformation policy : certPolicies.getPolicyInformation()) {
+                for (ASN1Encodable pQualifierInfo: policy.getPolicyQualifiers().toArray()) {
+                    PolicyQualifierInfo info = PolicyQualifierInfo.getInstance(pQualifierInfo);
+                    //Substract the data based on the OID
+                    switch (info.getPolicyQualifierId().getId()) {
+                        case POLICY_QUALIFIER_CPSURI:
+                            cpsURI = DERIA5String.getInstance(info.getQualifier()).getString();
+                            break;
+                        case POLICY_QUALIFIER_USER_NOTICE:
+                            UserNotice userNotice = UserNotice.getInstance(info.getQualifier());
+                            userNoticeQualifier = userNotice.getExplicitText().getString();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+
+        //Add to map
+        policyQualifiers.put("userNotice", userNoticeQualifier);
+        policyQualifiers.put("cpsURI", cpsURI);
+
+        return policyQualifiers;
+    }
 }
