@@ -66,13 +66,16 @@ public final class CertificateStringMapBuilder {
             data.put("signatureAlgorithm", certificate.getSignatureAlgorithm());
             if (certificate.getEncodedPublicKey() != null) {
                 data.put("encodedPublicKey", Arrays.toString(certificate.getEncodedPublicKey()));
-                data.put("publicKeyValue", certificate.getPublicKeyModulusHexValue());
-                data.put("publicKeySize", Integer.toString(certificate
-                        .getPublicKeyModulusHexValue().length()));
 //                data.put("publicKeySize", Integer.toString(certificate
 //                        .getEncodedPublicKey()
 //                        .length * Certificate.MIN_ATTR_CERT_LENGTH));
                 data.put("publicKeyAlgorithm", certificate.getPublicKeyAlgorithm());
+            }
+
+            if (certificate.getPublicKeyModulusHexValue() != null) {
+                data.put("publicKeyValue", certificate.getPublicKeyModulusHexValue());
+                data.put("publicKeySize", Integer.toString(certificate
+                        .getPublicKeyModulusHexValue().length()));
             }
 
             if (certificate.getKeyUsage() != null) {

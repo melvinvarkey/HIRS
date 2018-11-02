@@ -148,8 +148,8 @@
                                 </a>                                                                    
                             </div>
                             <div id="publicKeycollapse" class="panel-body collaspse in" role="tabpanel" aria-expanded="true">
-                                <!--<div id="encodedPublicKey" class="fieldValue"></div>-->      
-                                <div id="publicKey" class="fieldValue">${initialData.publicKeyValue}</div>
+                                <div id="encodedPublicKey" class="fieldValue"></div>      
+                                <!--<div id="publicKeyValue" class="fieldValue"></div>-->
                             </div>
                         </div>
                         <div class="panel panel-default">
@@ -743,7 +743,8 @@
             <c:if test="${not empty initialData.encodedPublicKey}">
                 //Change publick key byte to hex
                 var publicKey = ${initialData.encodedPublicKey};
-                $("#encodedPublicKey").html(byteToHexString(publicKey));
+                var somicKey = byteToHexString(publicKey);
+                $("#encodedPublicKey").html(somicKey);
             </c:if>
                 
             <c:if test="${not empty initialData.subjectKeyIdentifier}">
