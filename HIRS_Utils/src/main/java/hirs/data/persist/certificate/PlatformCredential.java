@@ -435,8 +435,9 @@ public class PlatformCredential extends DeviceAssociatedCertificate {
         }
 
         //Get TCG Platform Specification Information
-        for (ASN1Encodable enc: certificate.getAttributes().toArray()) {
+        for (ASN1Encodable enc : certificate.getAttributes().toArray()) {
             Attribute attr = Attribute.getInstance(enc);
+            LOGGER.warn("TDM hey! - " + attr.getAttrType().toString());
             if (TCG_PLATFORM_SPECIFICATION.equals(attr.getAttrType().toString())) {
                 ASN1Sequence tcgPlatformSpecification
                         = ASN1Sequence.getInstance(attr.getAttrValues().getObjectAt(0));

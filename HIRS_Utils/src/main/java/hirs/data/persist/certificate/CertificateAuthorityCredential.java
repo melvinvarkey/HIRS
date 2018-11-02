@@ -109,7 +109,7 @@ public class CertificateAuthorityCredential extends Certificate {
      * @return cPSuri from the CertificatePolicies.
      */
     public String getCPSuri() {
-        String cps = "NOT FOUND";
+        String cps = "";
 
         return cps;
     }

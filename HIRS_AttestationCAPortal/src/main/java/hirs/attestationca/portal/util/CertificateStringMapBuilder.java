@@ -59,15 +59,19 @@ public final class CertificateStringMapBuilder {
             }
 
             data.put("crlPoints", certificate.getCrlPoints());
+            data.put("authInfoAccess", certificate.getAuthInfoAccess());
+            data.put("authKeyId", certificate.getAuthKeyId());
             data.put("policyReference", certificate.getPolicyRef());
             //certificate.getPolicyReference());
             data.put("signatureAlgorithm", certificate.getSignatureAlgorithm());
             if (certificate.getEncodedPublicKey() != null) {
-                data.put("encodedPublicKey",
-                        Arrays.toString(certificate.getEncodedPublicKey()));
+                data.put("encodedPublicKey", Arrays.toString(certificate.getEncodedPublicKey()));
+                data.put("publicKeyValue", certificate.getPublicKeyModulusHexValue());
                 data.put("publicKeySize", Integer.toString(certificate
-                        .getEncodedPublicKey()
-                        .length * Certificate.MIN_ATTR_CERT_LENGTH));
+                        .getPublicKeyModulusHexValue().length()));
+//                data.put("publicKeySize", Integer.toString(certificate
+//                        .getEncodedPublicKey()
+//                        .length * Certificate.MIN_ATTR_CERT_LENGTH));
                 data.put("publicKeyAlgorithm", certificate.getPublicKeyAlgorithm());
             }
 

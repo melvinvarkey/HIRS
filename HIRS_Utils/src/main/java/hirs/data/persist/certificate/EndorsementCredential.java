@@ -330,6 +330,11 @@ public class EndorsementCredential extends DeviceAssociatedCertificate {
                 LOGGER.debug("Found TPM Manufacturer: " + manufacturer);
             } else if (oid.equals(POLICY_QUALIFIER_USER_NOTICE)) {
                 credentialType = value.toString();
+                LOGGER.warn("TDM Found Cred Type in ParseCertificate");
+            } else if (oid.equals(AUTHORITY_KEY_IDENTIFIER)) {
+                LOGGER.warn("TDM Found parsedFields Key Identifier");
+            } else if (oid.equals(AUTHORITY_INFO_ACCESS)) {
+                LOGGER.warn("TDM Found parsedFields Info Access");
             }
         }
     }
@@ -366,6 +371,12 @@ public class EndorsementCredential extends DeviceAssociatedCertificate {
             }
 
             // The next two are special sequences that have already been matched with an OID.
+        } else if (addToMapping && key.equals(POLICY_QUALIFIER_USER_NOTICE)) {
+                LOGGER.warn("TDM Found Cred Type in parseSequence");
+        } else if (addToMapping && key.equals(AUTHORITY_KEY_IDENTIFIER)) {
+                LOGGER.warn("TDM Found AKI");
+        } else if (addToMapping && key.equals(AUTHORITY_INFO_ACCESS)) {
+                LOGGER.warn("TDM Found AIA");
         } else if (addToMapping && key.equals(TPM_SPECIFICATION)
                 && seq.size() == ASN1_SEQ_KNOWN_SIZE) {
             // Parse TPM Specification

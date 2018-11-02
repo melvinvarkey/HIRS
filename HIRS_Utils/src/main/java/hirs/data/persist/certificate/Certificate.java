@@ -54,6 +54,17 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DLSequence;
+import org.bouncycastle.asn1.x509.AccessDescription;
+import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
+import org.bouncycastle.asn1.x509.CRLDistPoint;
+import org.bouncycastle.asn1.x509.DistributionPoint;
+import org.bouncycastle.asn1.x509.DistributionPointName;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
 
 /**
@@ -69,6 +80,10 @@ public abstract class Certificate extends ArchivableEntity {
      */
     @SuppressWarnings("PMD.AvoidUsingHardCodedIP") // this is not an IP address; PMD thinks it is
     public static final String AUTHORITY_KEY_IDENTIFIER = "2.5.29.35";
+    /**
+     * a variable.
+     */
+    public static final String AUTHORITY_INFO_ACCESS = "1.3.6.1.5.5.7.1.1";
     /**
      * a variable.
      */
@@ -282,6 +297,9 @@ public abstract class Certificate extends ArchivableEntity {
     private String keyUsage;
     private String extendedKeyUsage;
     private byte[] policyConstraints;
+    private String authorityKeyIdentifier;
+    private String authorityInfoAccess;
+    private String crlPoints;
 
     /**
      * Default constructor necessary for Hibernate.
@@ -306,6 +324,9 @@ public abstract class Certificate extends ArchivableEntity {
         this.holderSerialNumber = BigInteger.ZERO;
         this.holderIssuer = null;
         this.policyConstraints = null;
+        this.authorityKeyIdentifier = null;
+        this.authorityInfoAccess = null;
+        this.crlPoints = null;
     }
 
     /**
@@ -388,6 +409,9 @@ public abstract class Certificate extends ArchivableEntity {
                 } catch (CertificateParsingException ex) {
                     // do nothing
                 }
+                this.authorityKeyIdentifier = getAuthorityKeyIdentifier();
+                this.authorityInfoAccess = getAuthorityInfoAccess();
+                this.crlPoints = getCRLDistributionPoint();
 
                 break;
 
@@ -609,6 +633,141 @@ public abstract class Certificate extends ArchivableEntity {
     }
 
     /**
+     * Gets the contents of a given OID.
+     *
+     * @param oid Object Identifier (OID)
+     *
+     * @return ASN1Primitive Content related to the reported OID
+     * @throws java.io.IOException
+     */
+    private ASN1Primitive getExtensionValue(final String oid) throws IOException {
+        byte[] extensionValue = getX509Certificate().getExtensionValue(oid);
+        ASN1Primitive asn1Primitive = null;
+        ASN1InputStream asn1InputStream = null;
+
+        if (extensionValue != null) {
+            try {
+                asn1InputStream = new ASN1InputStream(extensionValue);
+                DEROctetString oct = (DEROctetString) asn1InputStream.readObject();
+                asn1InputStream.close();
+                asn1InputStream = new ASN1InputStream(oct.getOctets());
+                asn1Primitive = asn1InputStream.readObject();
+            } catch (IOException ioEx) {
+                LOGGER.error(ioEx);
+            } finally {
+                if (asn1InputStream != null) {
+                    asn1InputStream.close();
+                }
+            }
+        }
+
+        return asn1Primitive;
+    }
+
+    /**
+     * Returns the AuthorityInfoAccess extension value on list format.<br>
+     * Otherwise, returns <b>list empty</b>.<br>
+     * @return List Authority info access list
+     */
+    private String getAuthorityInfoAccess() {
+        List<String> address = new ArrayList<>();
+        try {
+            byte[] authAccess = getX509Certificate().getExtensionValue(
+                    Extension.authorityInfoAccess.getId());
+            if (authAccess != null && authAccess.length > 0) {
+                AuthorityInformationAccess infoAccess = AuthorityInformationAccess
+                        .getInstance(X509ExtensionUtil
+                        .fromExtensionValue(authAccess));
+                for (AccessDescription desc : infoAccess.getAccessDescriptions()) {
+                    if (desc.getAccessLocation().getTagNo() == GeneralName
+                            .uniformResourceIdentifier) {
+                        address.add(((DERIA5String) desc
+                                .getAccessLocation()
+                                .getName())
+                                .getString());
+                    }
+                }
+            }
+        } catch (IOException ioEx) {
+            LOGGER.error(ioEx);
+            return "";
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        for (String s : address) {
+            sb.append(String.format("%s%n", s));
+        }
+
+        return sb.toString();
+    }
+
+
+    /**
+     *
+     *
+     * @return the authority key identifier of a certificate
+     * @throws IOException exception
+     */
+    private String getAuthorityKeyIdentifier() throws IOException {
+        DLSequence sequence = (DLSequence) getExtensionValue(Extension
+                .authorityKeyIdentifier.getId());
+        if (sequence == null || sequence.size() == 0) {
+            return "";
+        }
+
+        DERTaggedObject taggedObject = (DERTaggedObject) sequence.getObjectAt(0);
+
+        String temp = taggedObject.getObject().toString();
+        if (temp.startsWith("#")) {
+            return temp.replaceFirst("#", "");
+        }
+
+        return temp;
+    }
+
+    /**
+     *
+     * @return A list of ulrs that inform the location of the certificate revocation lists
+     * @throws java.io.IOException
+     */
+    private String getCRLDistributionPoint() throws IOException {
+        List<String> crlUrls = new ArrayList<>();
+        ASN1Primitive primitive = getExtensionValue(Extension.cRLDistributionPoints.getId());
+
+        if (primitive != null) {
+            CRLDistPoint crlDistPoint = CRLDistPoint.getInstance(primitive);
+            DistributionPoint[] distributionPoints = crlDistPoint.getDistributionPoints();
+
+            for (DistributionPoint distributionPoint : distributionPoints) {
+                DistributionPointName dpn = distributionPoint.getDistributionPoint();
+                // Look for URIs in fullName
+                if (dpn != null && dpn.getType() == DistributionPointName.FULL_NAME) {
+                    GeneralName[] genNames = GeneralNames.getInstance(dpn.getName())
+                            .getNames();
+                    for (GeneralName genName : genNames) {
+                        if (genName.getTagNo() == GeneralName.uniformResourceIdentifier) {
+                            String url = DERIA5String.getInstance(genName.getName())
+                                    .getString();
+                            crlUrls.add(url);
+                        }
+                    }
+
+                }
+            }
+        }
+
+
+        StringBuilder sb = new StringBuilder();
+
+        for (String s : crlUrls) {
+            sb.append(String.format("%s%n", s));
+        }
+
+        return sb.toString();
+    }
+
+    /**
      * Get the x509 Platform Certificate version.
      * @return a big integer representing the certificate version.
      */
@@ -733,7 +892,23 @@ public abstract class Certificate extends ArchivableEntity {
      * @return CRLs
      */
     public String getCrlPoints() {
-        return "";
+        return crlPoints;
+    }
+
+    /**
+     * Getter for the Authority Info Access List.
+     * @return return a list of Info Access
+     */
+    public String getAuthInfoAccess() {
+        return authorityInfoAccess;
+    }
+
+    /**
+     * Getter for the authorityKeyIdentifier.
+     * @return the ID String
+     */
+    public String getAuthKeyId() {
+        return authorityKeyIdentifier;
     }
 
     /**
@@ -822,6 +997,14 @@ public abstract class Certificate extends ArchivableEntity {
      */
     public String getSubject() {
         return subject;
+    }
+
+    /**
+     * Getter for the hex value as a string.
+     * @return a string for the public key
+     */
+    public String getPublicKeyModulusHexValue() {
+        return publicKeyModulusHexValue;
     }
 
     /**
