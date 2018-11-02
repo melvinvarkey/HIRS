@@ -384,6 +384,8 @@ public abstract class AbstractAttestationCertificateAuthority
 
         // attempt to deserialize Protobuf IdentityClaim
         ProvisionerTpm2.IdentityClaim claim = parseIdentityClaim(identityClaim);
+        LOG.error("Received claim with PACCOR output:");
+        LOG.error(claim.getPaccorOutput());
 
         // parse the EK Public key from the IdentityClaim once for use in supply chain validation
         // and later tpm20MakeCredential function
